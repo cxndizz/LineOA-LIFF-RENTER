@@ -73,7 +73,10 @@ const goBack = () => router.back()
       </div>
 
       <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex justify-center md:max-w-md md:mx-auto">
-        <button class="w-full bg-blue-600 text-white font-bold text-lg py-3 rounded-xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
+        <button 
+          @click="$router.push(`/booking/${productStore.currentProduct.id}`)"
+          class="w-full bg-blue-600 ..."
+        >
           จองเลย (Book Now)
         </button>
       </div>
