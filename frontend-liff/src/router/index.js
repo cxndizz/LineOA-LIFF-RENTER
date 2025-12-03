@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue' 
 import BookingView from '../views/BookingView.vue'
+import PaymentView from '../views/PaymentView.vue' 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/booking/:id',
       name: 'booking',
       component: BookingView
+    },
+    {
+      path: '/payment/:id', // :id คือ Order ID
+      name: 'payment',
+      component: PaymentView
     }
   ]
 })

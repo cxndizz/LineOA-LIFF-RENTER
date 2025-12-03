@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '@/stores/product'
 import { useLiffStore } from '@/stores/liff'
 import api from '@/utils/axios'
-import VueDatePicker from '@vuepic/vue-datepicker'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import dayjs from 'dayjs'
 
@@ -77,7 +77,7 @@ const handleBooking = async () => {
     
     // จองสำเร็จ -> ไปหน้าสำเร็จ (หรือหน้าชำระเงิน)
     alert(`จองสำเร็จ! รหัส ${response.data.rentalRef}`)
-    router.push('/') // เดี๋ยวเราจะทำหน้า Order Success ทีหลัง
+    router.push(`/payment/${response.data.id}`) // เดี๋ยวเราจะทำหน้า Order Success ทีหลัง
     
   } catch (error) {
     console.error(error)
