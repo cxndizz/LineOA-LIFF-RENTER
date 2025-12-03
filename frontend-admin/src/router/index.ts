@@ -5,6 +5,7 @@ import DashboardView from '../views/DashboardView.vue'
 import AdminLayout from '../components/layouts/AdminLayout.vue'
 import BranchListView from '../views/branches/BranchListView.vue' 
 import ProductListView from '../views/products/ProductListView.vue'
+import OrderListView from '../views/orders/OrderListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,11 @@ const router = createRouter({
           path: 'products',
           name: 'products',
           component: ProductListView
+        },
+        {
+          path: 'orders',
+          name: 'orders',
+          component: OrderListView
         }
       ]
     }

@@ -10,6 +10,7 @@ import { BranchesModule } from './branches/branches.module';
 import { ProductsModule } from './products/products.module';
 import { RentalsModule } from './rentals/rentals.module';
 import { PaymentsModule } from './payments/payments.module';
+import { LineApiModule } from './line-api/line-api.module';
 // (เดี๋ยว ProductsModule จะถูกเพิ่มเข้ามาอัตโนมัติในขั้นตอนถัดไป)
 
 @Module({
@@ -25,6 +26,7 @@ import { PaymentsModule } from './payments/payments.module';
     ProductsModule,
     RentalsModule,
     PaymentsModule,
+    LineApiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,11 +3,15 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
+import { LineApiService } from '../line-api/line-api.service'; // ✅ Import
 import dayjs from 'dayjs';
 
 @Injectable()
 export class RentalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private lineApiService: LineApiService
+  ) {}
 
   async create(createRentalDto: CreateRentalDto) {
     const {
@@ -105,11 +109,11 @@ export class RentalsService {
   async updateStatus(id: number, updateDto: UpdateRentalStatusDto, adminId: number) {
     const { status, note } = updateDto;
 
-    // อัปเดตสถานะ + บันทึก Log
-    return this.prisma.rentalOrder.update({
+    // 1. อัปเดตสถานะ (โค้ดเดิม)
+    const order = await this.prisma.rentalOrder.update({
       where: { id },
       data: {
-        status: status as any, // Cast type ให้ตรงกับ Enum ใน Prisma
+        status: status as any,
         statusHistory: {
           create: {
             status: status as any,
@@ -118,7 +122,33 @@ export class RentalsService {
           },
         },
       },
-      include: { customer: true }, // ดึงข้อมูลลูกค้ามาด้วย (เตรียมไว้ส่ง LINE Noti ใน Phase หน้า)
+      include: { customer: true, product: true }, // ✅ ดึงข้อมูลสินค้าและลูกค้ามาด้วย
     });
+
+    // 2. ส่ง LINE Notification ตามสถานะ
+    let message = '';
+    const productName = order.product.name;
+    const ref = order.rentalRef;
+
+    switch (status) {
+      case 'APPROVED':
+        message = `✅ ออร์เดอร์ ${ref} ได้รับการอนุมัติแล้ว!\nสินค้า: ${productName}\nกรุณารอรับของตามวันนัดหมายครับ`;
+        break;
+      case 'REJECTED':
+        message = `❌ ออร์เดอร์ ${ref} ไม่ผ่านการอนุมัติ\nเหตุผล: ${note || 'เอกสารไม่ถูกต้อง'}\nกรุณาติดต่อแอดมิน`;
+        break;
+      case 'WAITING_DELIVERY':
+        message = `🚚 สินค้า ${productName} กำลังเตรียมจัดส่ง/พร้อมรับแล้วครับ`;
+        break;
+      case 'RETURNED':
+        message = `🙏 ขอบคุณที่ใช้บริการครับ หวังว่าจะได้ให้บริการอีกครั้งนะครับ`;
+        break;
+    }
+
+    if (message && order.customer?.lineUserId) {
+      await this.lineApiService.pushMessage(order.customer.lineUserId, message);
+    }
+
+    return order;
   }
 }
