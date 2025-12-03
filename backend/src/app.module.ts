@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { BranchesModule } from './branches/branches.module';
 import { ProductsModule } from './products/products.module';
+import { RentalsModule } from './rentals/rentals.module';
 // (เดี๋ยว ProductsModule จะถูกเพิ่มเข้ามาอัตโนมัติในขั้นตอนถัดไป)
 
 @Module({
@@ -21,6 +22,7 @@ import { ProductsModule } from './products/products.module';
     AuthModule,
     BranchesModule,
     ProductsModule,
+    RentalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
