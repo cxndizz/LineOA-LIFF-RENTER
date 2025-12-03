@@ -1,0 +1,34 @@
+# File: docker-compose.yml
+version: '3.8'
+
+services:
+  # Database Service (PostgreSQL)
+  postgres:
+    image: postgres:16-alpine
+    container_name: rental_db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: rental_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rental_network
+
+  # (Optional) Adminer for GUI DB Management (เข้าผ่าน http://localhost:8080)
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - rental_network
+
+volumes:
+  postgres_data:
+
+networks:
+  rental_network:
+    driver: bridge

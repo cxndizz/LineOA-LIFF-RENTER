@@ -1,0 +1,198 @@
+// File: backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --------------------------------------
+// ENUMS (ตัวเลือกสถานะต่างๆ)
+// --------------------------------------
+
+enum Role {
+  SUPER_ADMIN
+  BRANCH_ADMIN
+  STAFF
+}
+
+enum ProductStatus {
+  AVAILABLE    // พร้อมเช่า
+  UNAVAILABLE  // ไม่ว่าง / เสีย / ปิดปรับปรุง
+  MAINTENANCE  // ส่งซ่อม
+}
+
+enum RentalStatus {
+  PENDING_PAYMENT      // จองแล้ว รอโอนเงิน
+  WAITING_CONFIRMATION // ลูกค้าแจ้งโอนแล้ว รอแอดมินตรวจ
+  APPROVED             // อนุมัติแล้ว (จองสำเร็จ)
+  WAITING_DELIVERY     // ถึงวันรับของ (เตรียมของ)
+  IN_USE               // ลูกค้ารับของไปแล้ว
+  RETURNED             // คืนของแล้ว (จบ process)
+  CANCELLED            // ยกเลิก
+  REJECTED             // แอดมินไม่อนุมัติ (เช่น สลิปปลอม)
+}
+
+// --------------------------------------
+// MODELS (ตารางข้อมูล)
+// --------------------------------------
+
+// 1. Admin Users (คนดูแลระบบ)
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Hash password
+  fullName  String
+  role      Role     @default(BRANCH_ADMIN)
+  isActive  Boolean  @default(true)
+  
+  // Relation: User อาจดูแล 1 สาขา (Optional ถ้าเป็น Super Admin อาจไม่ผูก)
+  branchId  Int?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. Customers (ลูกค้าที่มาจาก LINE)
+model Customer {
+  id             Int     @id @default(autoincrement())
+  lineUserId     String  @unique // User ID จาก LINE Messaging API
+  displayName    String? // ชื่อโปรไฟล์ LINE
+  pictureUrl     String? // รูปโปรไฟล์ LINE
+  
+  // ข้อมูลจริงสำหรับการเช่า (กรอกตอน Booking)
+  firstName      String?
+  lastName       String?
+  phoneNumber    String?
+  
+  // Relation: ประวัติการเช่า
+  rentals        RentalOrder[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// 3. Branches (สาขา)
+model Branch {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String?
+  latitude  Float?
+  longitude Float?
+  phone     String?
+  isActive  Boolean  @default(true)
+
+  // Relations
+  users     User[]
+  products  Product[]
+  rentals   RentalOrder[] // ออร์เดอร์ที่มารับที่สาขานี้
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 4. Products (สินค้า/กล้อง)
+model Product {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?       @db.Text
+  pricePerDay Decimal       @db.Decimal(10, 2)
+  deposit     Decimal       @default(0) @db.Decimal(10, 2) // ค่ามัดจำ
+  status      ProductStatus @default(AVAILABLE)
+  
+  // Relation: สาขาที่สินค้านี้อยู่
+  branchId    Int
+  branch      Branch        @relation(fields: [branchId], references: [id])
+
+  // Relation: รูปภาพ
+  images      ProductImage[]
+
+  // Relation: รายการเช่าของสินค้านี้
+  rentals     RentalOrder[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// 5. Product Images (รูปสินค้า - One-to-Many)
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  url       String
+  isMain    Boolean  @default(false) // เป็นรูปหลักหรือไม่
+  
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+// 6. Rental Orders (ใบสั่งเช่า)
+model RentalOrder {
+  id            Int          @id @default(autoincrement())
+  rentalRef     String       @unique // รหัสการจอง เช่น RENT-20250501-XXXX
+  
+  // วันที่จอง
+  startDate     DateTime
+  endDate       DateTime
+  
+  // คำนวณราคา
+  totalPrice    Decimal      @db.Decimal(10, 2) // ราคาค่าเช่ารวม
+  depositAmount Decimal      @default(0) @db.Decimal(10, 2) // มัดจำที่ต้องจ่าย
+  
+  // สถานะ
+  status        RentalStatus @default(PENDING_PAYMENT)
+
+  // ข้อมูลสถานที่รับของ (กรณีเลือก Custom หรือสาขา)
+  pickupLocationType String? // 'BRANCH' or 'CUSTOM'
+  customPickupAddress String? // ที่อยู่ถ้าเลือกนัดรับที่อื่น
+  customLat          Float?
+  customLng          Float?
+
+  // Relations
+  customerId    Int
+  customer      Customer     @relation(fields: [customerId], references: [id])
+
+  productId     Int
+  product       Product      @relation(fields: [productId], references: [id])
+
+  branchId      Int
+  branch        Branch       @relation(fields: [branchId], references: [id])
+
+  payment       Payment?     // 1 Order มี 1 Payment transaction ล่าสุด
+  
+  statusHistory RentalStatusHistory[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// 7. Payment (การชำระเงิน/สลิป)
+model Payment {
+  id            Int      @id @default(autoincrement())
+  amount        Decimal  @db.Decimal(10, 2)
+  slipUrl       String?  // รูปสลิป
+  transferDate  DateTime? // วันที่โอนตามสลิป
+  bankName      String?
+  
+  rentalOrderId Int      @unique
+  rentalOrder   RentalOrder @relation(fields: [rentalOrderId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// 8. Log ประวัติการเปลี่ยนสถานะ (Audit Log)
+model RentalStatusHistory {
+  id            Int          @id @default(autoincrement())
+  status        RentalStatus // สถานะที่เปลี่ยน
+  note          String?      // หมายเหตุ (เช่น เหตุผลที่ reject)
+  changedBy     String?      // ใครเป็นคนเปลี่ยน (System, AdminID, Customer)
+  
+  rentalOrderId Int
+  rentalOrder   RentalOrder  @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime     @default(now())
+}
