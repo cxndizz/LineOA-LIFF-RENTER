@@ -14,8 +14,8 @@ import { ProductsModule } from './products/products.module';
   imports: [
     // เปิดให้เข้าถึงไฟล์ใน folder 'uploads' ผ่าน URL /uploads/...
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads', 
+      rootPath: join(process.cwd(), 'uploads'), 
+      serveRoot: '/uploads',
     }),
     PrismaModule,
     AuthModule,

@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import AdminLayout from '../components/layouts/AdminLayout.vue'
+import BranchListView from '../views/branches/BranchListView.vue' 
+import ProductListView from '../views/products/ProductListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,8 +25,16 @@ const router = createRouter({
           name: 'dashboard',
           component: DashboardView
         },
-        // เดี๋ยวเราจะเพิ่ม routes สาขา/สินค้า ต่อท้ายตรงนี้
-        // { path: 'branches', ... }
+        {
+          path: 'branches',
+          name: 'branches',
+          component: BranchListView
+        },
+        {
+          path: 'products',
+          name: 'products',
+          component: ProductListView
+        }
       ]
     }
   ]
