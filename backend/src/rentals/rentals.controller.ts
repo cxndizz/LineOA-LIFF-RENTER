@@ -1,8 +1,10 @@
 // File: src/rentals/rentals.controller.ts
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch, Req } from '@nestjs/common';
 import { RentalsService } from './rentals.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateRentalStatusDto } from './dto/update-rental-status.dto'; 
+import { Request } from 'express'; 
 
 @Controller('rentals')
 export class RentalsController {
@@ -24,5 +26,17 @@ export class RentalsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.rentalsService.findOne(+id);
+  }
+
+  // 🔒 Admin เปลี่ยนสถานะออร์เดอร์
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateRentalStatusDto,
+    @Req() req: any, // รับ request เพื่อเอา user.id
+  ) {
+    // req.user มาจาก JwtStrategy
+    return this.rentalsService.updateStatus(+id, updateDto, req.user.id);
   }
 }

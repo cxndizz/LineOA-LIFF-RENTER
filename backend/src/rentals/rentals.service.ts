@@ -2,6 +2,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
+import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -83,6 +84,7 @@ export class RentalsService {
         customer: true,
         product: { include: { images: true } },
         branch: true,
+        payment: true, // ✅ เพิ่มบรรทัดนี้
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -97,6 +99,26 @@ export class RentalsService {
         product: { include: { images: true } },
         branch: true,
       },
+    });
+  }
+
+  async updateStatus(id: number, updateDto: UpdateRentalStatusDto, adminId: number) {
+    const { status, note } = updateDto;
+
+    // อัปเดตสถานะ + บันทึก Log
+    return this.prisma.rentalOrder.update({
+      where: { id },
+      data: {
+        status: status as any, // Cast type ให้ตรงกับ Enum ใน Prisma
+        statusHistory: {
+          create: {
+            status: status as any,
+            note,
+            changedBy: `Admin ID: ${adminId}`,
+          },
+        },
+      },
+      include: { customer: true }, // ดึงข้อมูลลูกค้ามาด้วย (เตรียมไว้ส่ง LINE Noti ใน Phase หน้า)
     });
   }
 }
