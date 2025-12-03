@@ -1,20 +1,21 @@
 // File: backend/prisma/seed.ts
 import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import * as dotenv from 'dotenv'; // ✅ Import dotenv
 
-// ✅ ประกาศแบบโล่งๆ เลยครับ มันจะไปอ่านจาก .env ผ่าน schema เอง
+// ✅ โหลด Environment Variables เอง
+dotenv.config();
+
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting seeding...');
-  
-  // ... (โค้ด logic เดิมทั้งหมด ตั้งแต่ hash password ลงมาไม่ต้องแก้ครับ)
+
+  // 1. Hash Password
   const salt = await bcrypt.genSalt();
   const hashedPassword = await bcrypt.hash('admin1234', salt);
-  
-  // ... (copy logic เดิมมาวางต่อได้เลย)
-  
-    // 2. ตรวจสอบว่ามี Super Admin หรือยัง
+
+  // 2. สร้าง Admin
   const existingAdmin = await prisma.user.findUnique({
     where: { email: 'admin@rental.com' },
   });
@@ -34,7 +35,7 @@ async function main() {
     console.log('ℹ️ Super Admin already exists.');
   }
 
-  // 3. (Optional) สร้างสาขาตัวอย่าง
+  // 3. สร้างสาขา HQ
   const existingBranch = await prisma.branch.findFirst();
   if (!existingBranch) {
     await prisma.branch.create({
