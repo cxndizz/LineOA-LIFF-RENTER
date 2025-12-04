@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { productService } from '@/services/product.service'
 import { branchService } from '@/services/branch.service'
+import api from '@/utils/axios'
 
 // State
 const products = ref([])
@@ -25,7 +26,13 @@ const form = ref({
 const previewImages = ref([]) // สำหรับโชว์รูปตัวอย่างก่อนอัปโหลด
 
 // --- Base URL สำหรับรูปภาพ ---
-const API_URL = 'http://localhost:3000'
+export default {
+  methods: {
+    getImageUrl(path) {
+      return `${api.defaults.baseURL}/${path}`
+    }
+  }
+}
 
 onMounted(() => {
   fetchProducts()
@@ -148,7 +155,7 @@ const handleDelete = async (id) => {
                   <img 
                     v-for="(img, idx) in product.images.slice(0, 5)" 
                     :key="img.id"
-                    :src="`${API_URL}${img.url}`" 
+                    :src="getImageUrl(img.url)"
                     class="inline-block w-10 h-10 rounded-full ring-2 ring-white object-cover"
                     :alt="product.name"
                     :title="idx === 0 ? 'Main Image' : ''"
