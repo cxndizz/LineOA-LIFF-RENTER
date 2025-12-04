@@ -28,8 +28,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://myuser:mypassword@postgres:5432/rental_db?schema=public"
       JWT_SECRET: "7ea93db3dbc3d850ab939a30f7c1f9718669a757484931abb91fc634b517056fd81a63e06d70ae43bb4d3cb7207a9dd48f2a7d9df03555f2e39d651711200a1c" # ควรเปลี่ยนเป็นค่าที่ปลอดภัยใน Production
-      LINE_CHANNEL_ACCESS_TOKEN: "ใส่_Token_จริง_ที่นี่"
-      LINE_CHANNEL_SECRET: "02901328e69417caaca2ff9086f5c1f4"
+      LINE_CHANNEL_ACCESS_TOKEN: "zrYlBxHeQT9Dq5BRHQZn7SEjp12qS2RHwcBZPTuo+KZvFQUBa7sKX74zPlxRrqPHIR0HW4Q9mm9wZJAS6OIWqSyEbEX13Y96NdkgoODrUhnKNxyY8lBcCgSNhZ3rd1c0rkUxtNFaq07oFPVFAsCFWwdB04t89/1O/w1cDnyilFU="
+      LINE_CHANNEL_SECRET: "0e2e163ef4db60123ea31ce9fd9301ec"
     depends_on:
       - postgres
     volumes:
