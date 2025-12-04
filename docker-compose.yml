@@ -27,9 +27,9 @@ services:
       - '3000:3000'
     environment:
       DATABASE_URL: "postgresql://myuser:mypassword@postgres:5432/rental_db?schema=public"
-      JWT_SECRET: "supersecretkey" # ควรเปลี่ยนเป็นค่าที่ปลอดภัยใน Production
+      JWT_SECRET: "7ea93db3dbc3d850ab939a30f7c1f9718669a757484931abb91fc634b517056fd81a63e06d70ae43bb4d3cb7207a9dd48f2a7d9df03555f2e39d651711200a1c" # ควรเปลี่ยนเป็นค่าที่ปลอดภัยใน Production
       LINE_CHANNEL_ACCESS_TOKEN: "ใส่_Token_จริง_ที่นี่"
-      LINE_CHANNEL_SECRET: "ใส่_Secret_จริง_ที่นี่"
+      LINE_CHANNEL_SECRET: "02901328e69417caaca2ff9086f5c1f4"
     depends_on:
       - postgres
     volumes:
