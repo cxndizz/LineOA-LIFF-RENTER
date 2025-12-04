@@ -1,0 +1,17 @@
+api.fortestonlyme.online {
+    reverse_proxy backend:3000
+}
+
+admin.fortestonlyme.online {
+    reverse_proxy frontend-admin:80
+}
+
+fortestonlyme.online {
+    reverse_proxy frontend-liff:80
+}
+
+# ถ้าอยากให้คนที่เข้า app.fortestonlyme.online โดน redirect มาที่โดเมนหลัก:
+app.fortestonlyme.online {
+    redir https://fortestonlyme.online{uri}
+}
+

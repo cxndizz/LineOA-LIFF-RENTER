@@ -70,9 +70,30 @@ services:
     networks:
       - rental_network
 
+  caddy:
+    image: caddy:2
+    container_name: rental_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend-admin
+      - frontend-liff
+    networks:
+      - rental_network
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   rental_network:
     driver: bridge
+
