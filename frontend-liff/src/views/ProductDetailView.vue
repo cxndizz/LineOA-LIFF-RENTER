@@ -2,11 +2,17 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '@/stores/product'
+import api from '@/utils/axios'
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
-const baseUrl = 'http://localhost:3000'
+
+// ฟังก์ชันสำหรับสร้าง URL รูปภาพ (ป้องกัน double slash)
+const getImageUrl = (path) => {
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path
+  return `${api.defaults.baseURL}/${cleanPath}`
+}
 
 onMounted(() => {
   productStore.fetchProductById(route.params.id)
@@ -30,12 +36,12 @@ const goBack = () => router.back()
 
       <div class="relative w-full h-80 bg-gray-100 overflow-hidden">
         <div class="flex overflow-x-auto snap-x snap-mandatory w-full h-full hide-scrollbar">
-          <div 
-            v-for="img in productStore.currentProduct.images" 
-            :key="img.id" 
+          <div
+            v-for="img in productStore.currentProduct.images"
+            :key="img.id"
             class="snap-center w-full flex-shrink-0 h-full"
           >
-            <img :src="`${baseUrl}${img.url}`" class="w-full h-full object-cover" />
+            <img :src="getImageUrl(img.url)" class="w-full h-full object-cover" />
           </div>
           <div v-if="!productStore.currentProduct.images?.length" class="w-full h-full flex items-center justify-center text-gray-400">
             No Image

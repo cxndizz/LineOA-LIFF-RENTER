@@ -27,7 +27,9 @@ const previewImages = ref([]) // สำหรับโชว์รูปตั�
 
 // --- Base URL สำหรับรูปภาพ ---
 const getImageUrl = (path) => {
-  return `${api.defaults.baseURL}/${path}`
+  // ลบ / ที่อยู่หน้า path ออก เพื่อป้องกัน double slash
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path
+  return `${api.defaults.baseURL}/${cleanPath}`
 }
 
 onMounted(() => {

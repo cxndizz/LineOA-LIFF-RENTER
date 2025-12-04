@@ -8,9 +8,6 @@ const selectedOrder = ref(null) // ออร์เดอร์ที่กดด
 const showModal = ref(false)
 const actionNote = ref('') // หมายเหตุตอนกดเปลี่ยนสถานะ
 
-// URL รูปภาพ
-const API_URL = 'http://localhost:3000'
-
 const statusColors = {
   PENDING_PAYMENT: 'bg-yellow-100 text-yellow-800',
   WAITING_CONFIRMATION: 'bg-orange-100 text-orange-800',
