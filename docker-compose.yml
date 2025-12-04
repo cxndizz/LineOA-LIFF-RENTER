@@ -2,10 +2,11 @@
 version: '3.8'
 
 services:
-  # Database Service (PostgreSQL)
+  # 1. Database
   postgres:
     image: postgres:16-alpine
     container_name: rental_db
+    restart: always
     ports:
       - '5432:5432'
     environment:
@@ -17,12 +18,55 @@ services:
     networks:
       - rental_network
 
-  # (Optional) Adminer for GUI DB Management (เข้าผ่าน http://localhost:8080)
+  # 2. Backend API
+  backend:
+    build: ./backend
+    container_name: rental_backend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: "postgresql://myuser:mypassword@postgres:5432/rental_db?schema=public"
+      JWT_SECRET: "supersecretkey" # ควรเปลี่ยนเป็นค่าที่ปลอดภัยใน Production
+      LINE_CHANNEL_ACCESS_TOKEN: "ใส่_Token_จริง_ที่นี่"
+      LINE_CHANNEL_SECRET: "ใส่_Secret_จริง_ที่นี่"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/uploads:/app/uploads # Map โฟลเดอร์รูปภาพออกมาข้างนอก (กันหายเวลาลบ container)
+    networks:
+      - rental_network
+
+  # 3. Frontend Admin (Back Office)
+  frontend-admin:
+    build: ./frontend-admin
+    container_name: rental_admin
+    restart: always
+    ports:
+      - '8080:80' # เข้าผ่าน http://IP_VPS:8080
+    depends_on:
+      - backend
+    networks:
+      - rental_network
+
+  # 4. Frontend LIFF (Customer)
+  frontend-liff:
+    build: ./frontend-liff
+    container_name: rental_liff
+    restart: always
+    ports:
+      - '8081:80' # เข้าผ่าน http://IP_VPS:8081
+    depends_on:
+      - backend
+    networks:
+      - rental_network
+
+  # (Optional) Adminer
   adminer:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - 8090:8080 # เปลี่ยน port เลี่ยงชน frontend
     networks:
       - rental_network
 
