@@ -1,10 +1,15 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
+import api from '@/utils/axios'
 
 const productStore = useProductStore()
-// URL หลักของ Backend สำหรับต่อ path รูปภาพ
-const baseUrl = 'http://localhost:3000'
+
+// ฟังก์ชันสำหรับสร้าง URL รูปภาพ (ป้องกัน double slash)
+const getImageUrl = (path) => {
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path
+  return `${api.defaults.baseURL}/${cleanPath}`
+}
 
 onMounted(() => {
   productStore.fetchProducts()
@@ -43,9 +48,9 @@ onMounted(() => {
           class="bg-white rounded-xl ... cursor-pointer" 
         >
           <div class="aspect-square bg-gray-100 relative">
-            <img 
+            <img
               v-if="product.images && product.images.length > 0"
-              :src="`${baseUrl}${product.images[0].url}`" 
+              :src="getImageUrl(product.images[0].url)"
               class="w-full h-full object-cover"
               alt="Product Image"
             />

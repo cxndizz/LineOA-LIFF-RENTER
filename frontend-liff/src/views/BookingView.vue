@@ -13,6 +13,12 @@ const router = useRouter()
 const productStore = useProductStore()
 const liffStore = useLiffStore()
 
+// ฟังก์ชันสำหรับสร้าง URL รูปภาพ (ป้องกัน double slash)
+const getImageUrl = (path) => {
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path
+  return `${api.defaults.baseURL}/${cleanPath}`
+}
+
 // State
 const product = ref(null)
 const dates = ref(null) // เก็บช่วงวันที่เลือก [start, end]
@@ -97,9 +103,9 @@ const handleBooking = async () => {
 
     <div v-if="product" class="p-4 space-y-6">
       <div class="bg-white p-4 rounded-xl shadow-sm border flex gap-4">
-        <img 
-          v-if="product.images?.[0]" 
-          :src="`http://localhost:3000${product.images[0].url}`" 
+        <img
+          v-if="product.images?.[0]"
+          :src="getImageUrl(product.images[0].url)"
           class="w-20 h-20 object-cover rounded-lg bg-gray-100"
         />
         <div>
