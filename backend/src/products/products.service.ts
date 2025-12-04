@@ -63,4 +63,51 @@ export class ProductsService {
   remove(id: number) {
     return this.prisma.product.delete({ where: { id } });
   }
+
+  async checkAvailability(productId: number, startDate: string, endDate: string) {
+    // ตรวจสอบว่าสินค้ามีอยู่จริง
+    const product = await this.findOne(productId);
+
+    // แปลง string เป็น Date
+    const reqStart = new Date(startDate);
+    const reqEnd = new Date(endDate);
+
+    // ค้นหา rentals ที่อยู่ในช่วงเวลาที่ขัดแย้ง
+    const conflictingRentals = await this.prisma.rentalOrder.findMany({
+      where: {
+        productId,
+        status: {
+          in: ['APPROVED', 'WAITING_DELIVERY', 'IN_USE'], // สถานะที่ถือว่าจองแล้ว
+        },
+        OR: [
+          // กรณี 1: rental เริ่มก่อนหรือตรงกับ reqStart และสิ้นสุดหลัง reqStart
+          {
+            startDate: { lte: reqEnd },
+            endDate: { gte: reqStart },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        rentalRef: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+      },
+    });
+
+    const isAvailable = conflictingRentals.length === 0;
+
+    return {
+      productId,
+      productName: product.name,
+      requestedStart: startDate,
+      requestedEnd: endDate,
+      isAvailable,
+      conflictingRentals: isAvailable ? [] : conflictingRentals,
+      message: isAvailable
+        ? 'Product is available for the selected dates'
+        : 'Product is already booked for some or all of the selected dates',
+    };
+  }
 }

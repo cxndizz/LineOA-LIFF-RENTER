@@ -11,7 +11,9 @@ import { ProductsModule } from './products/products.module';
 import { RentalsModule } from './rentals/rentals.module';
 import { PaymentsModule } from './payments/payments.module';
 import { LineApiModule } from './line-api/line-api.module';
-// (เดี๋ยว ProductsModule จะถูกเพิ่มเข้ามาอัตโนมัติในขั้นตอนถัดไป)
+import { UsersModule } from './users/users.module';
+import { CustomersModule } from './customers/customers.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -27,6 +29,9 @@ import { LineApiModule } from './line-api/line-api.module';
     RentalsModule,
     PaymentsModule,
     LineApiModule,
+    UsersModule,
+    CustomersModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

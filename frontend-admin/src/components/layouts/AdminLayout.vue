@@ -8,9 +8,11 @@ const router = useRouter()
 // เมนูทั้งหมดของระบบ
 const menus = [
   { name: 'Dashboard', path: '/', icon: '📊' },
-  { name: 'Manage Branches', path: '/branches', icon: 'VX' },
+  { name: 'Manage Branches', path: '/branches', icon: '🏢' },
   { name: 'Manage Products', path: '/products', icon: '📦' },
   { name: 'Manage Orders', path: '/orders', icon: '📝' },
+  { name: 'Manage Users', path: '/users', icon: '👥' },
+  { name: 'Customers', path: '/customers', icon: '👤' },
 ]
 
 const handleLogout = () => {

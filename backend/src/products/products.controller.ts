@@ -1,5 +1,5 @@
 // File: src/products/products.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -32,6 +32,16 @@ export class ProductsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);
+  }
+
+  // 🔓 เช็คว่าสินค้าว่างในช่วงเวลาที่เลือก
+  @Get(':id/availability')
+  checkAvailability(
+    @Param('id') id: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.productsService.checkAvailability(+id, startDate, endDate);
   }
 
   // 🔒 แก้ไข (ต้อง Login)

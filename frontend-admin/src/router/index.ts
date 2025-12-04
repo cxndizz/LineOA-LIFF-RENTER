@@ -1,11 +1,14 @@
-// File: src/router/index.js (หรือ .ts)
+// File: src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import AdminLayout from '../components/layouts/AdminLayout.vue'
-import BranchListView from '../views/branches/BranchListView.vue' 
+import BranchListView from '../views/branches/BranchListView.vue'
 import ProductListView from '../views/products/ProductListView.vue'
 import OrderListView from '../views/orders/OrderListView.vue'
+import UserListView from '../views/users/UserListView.vue'
+import CustomerListView from '../views/customers/CustomerListView.vue'
+import CustomerDetailView from '../views/customers/CustomerDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,6 +43,21 @@ const router = createRouter({
           path: 'orders',
           name: 'orders',
           component: OrderListView
+        },
+        {
+          path: 'users',
+          name: 'users',
+          component: UserListView
+        },
+        {
+          path: 'customers',
+          name: 'customers',
+          component: CustomerListView
+        },
+        {
+          path: 'customers/:id',
+          name: 'customer-detail',
+          component: CustomerDetailView
         }
       ]
     }
