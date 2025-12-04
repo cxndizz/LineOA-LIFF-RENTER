@@ -26,12 +26,8 @@ const form = ref({
 const previewImages = ref([]) // สำหรับโชว์รูปตัวอย่างก่อนอัปโหลด
 
 // --- Base URL สำหรับรูปภาพ ---
-export default {
-  methods: {
-    getImageUrl(path) {
-      return `${api.defaults.baseURL}/${path}`
-    }
-  }
+const getImageUrl = (path) => {
+  return `${api.defaults.baseURL}/${path}`
 }
 
 onMounted(() => {
