@@ -34,6 +34,12 @@ export class ProductsController {
     return this.productsService.findOne(+id);
   }
 
+  // 🔓 ตรวจสอบความพร้อม (Availability) ของสินค้า
+  @Get(':id/availability')
+  getAvailability(@Param('id') id: string) {
+    return this.productsService.getAvailability(+id);
+  }
+
   // 🔒 แก้ไข (ต้อง Login)
   @UseGuards(JwtAuthGuard)
   @Patch(':id')

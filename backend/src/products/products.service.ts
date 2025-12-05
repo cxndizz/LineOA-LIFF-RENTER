@@ -63,4 +63,54 @@ export class ProductsService {
   remove(id: number) {
     return this.prisma.product.delete({ where: { id } });
   }
+
+  /**
+   * Get product availability (booked date ranges)
+   * Returns array of { startDate, endDate } for dates that are NOT available
+   */
+  async getAvailability(productId: number) {
+    // First check if product exists
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product #${productId} not found`);
+    }
+
+    // Get all active rental orders for this product
+    // Exclude CANCELLED and REJECTED orders
+    const bookedRentals = await this.prisma.rentalOrder.findMany({
+      where: {
+        productId,
+        status: {
+          notIn: ['CANCELLED', 'REJECTED'],
+        },
+      },
+      select: {
+        id: true,
+        rentalRef: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+      },
+      orderBy: {
+        startDate: 'asc',
+      },
+    });
+
+    return {
+      productId,
+      productName: product.name,
+      status: product.status,
+      bookedDates: bookedRentals.map(rental => ({
+        rentalId: rental.id,
+        rentalRef: rental.rentalRef,
+        startDate: rental.startDate,
+        endDate: rental.endDate,
+        status: rental.status,
+      })),
+      totalBookings: bookedRentals.length,
+    };
+  }
 }

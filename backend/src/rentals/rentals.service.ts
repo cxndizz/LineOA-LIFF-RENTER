@@ -102,6 +102,8 @@ export class RentalsService {
         customer: true,
         product: { include: { images: true } },
         branch: true,
+        payment: true, // ✅ เพิ่ม payment
+        statusHistory: { orderBy: { createdAt: 'desc' } }, // ✅ เพิ่ม status history
       },
     });
   }

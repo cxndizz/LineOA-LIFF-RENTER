@@ -7,6 +7,11 @@ import api from '@/utils/axios'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import dayjs from 'dayjs'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +28,8 @@ const getImageUrl = (path) => {
 const product = ref(null)
 const dates = ref(null) // เก็บช่วงวันที่เลือก [start, end]
 const isSubmitting = ref(false)
+const availability = ref(null) // เก็บข้อมูล availability
+const isLoadingAvailability = ref(false)
 
 // Form Data
 const form = ref({
@@ -32,14 +39,48 @@ const form = ref({
   address: ''
 })
 
+// Fetch availability data
+const fetchAvailability = async () => {
+  if (!route.params.id) return
+
+  isLoadingAvailability.value = true
+  try {
+    const response = await api.get(`/products/${route.params.id}/availability`)
+    availability.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch availability:', error)
+  } finally {
+    isLoadingAvailability.value = false
+  }
+}
+
+// ฟังก์ชันสำหรับ disable วันที่ถูกจอง
+const disabledDates = (date) => {
+  if (!availability.value?.bookedDates) return false
+
+  const checkDate = dayjs(date)
+
+  // ตรวจสอบว่า date อยู่ในช่วงที่ถูกจองหรือไม่
+  return availability.value.bookedDates.some(booking => {
+    const start = dayjs(booking.startDate)
+    const end = dayjs(booking.endDate)
+
+    // ถ้า date อยู่ระหว่าง start และ end (inclusive)
+    return checkDate.isSameOrAfter(start, 'day') && checkDate.isSameOrBefore(end, 'day')
+  })
+}
+
 onMounted(async () => {
   // ดึงข้อมูลสินค้าที่เลือก
   await productStore.fetchProductById(route.params.id)
   product.value = productStore.currentProduct
-  
-  // (ถ้ามี) ดึงชื่อจาก LIFF มาใส่ฟอร์มให้อัตโนมัติ
-  if (liffStore.profile) {
-    form.value.firstName = liffStore.profile.displayName
+
+  // ดึงข้อมูล availability
+  await fetchAvailability()
+
+  // ดึงชื่อจาก LIFF มาใส่ฟอร์มให้อัตโนมัติ
+  if (liffStore.isLoggedIn && liffStore.displayName) {
+    form.value.firstName = liffStore.displayName
   }
 })
 
@@ -65,14 +106,20 @@ const handleBooking = async () => {
   
   isSubmitting.value = true
   try {
+    // Validate LIFF login
+    if (!liffStore.isLoggedIn || !liffStore.userId) {
+      alert('กรุณาเข้าสู่ระบบผ่าน LINE ก่อน')
+      return
+    }
+
     // เตรียม Payload ส่งไป Backend
     const payload = {
       productId: product.value.id,
       startDate: dates.value[0],
       endDate: dates.value[1],
-      lineUserId: liffStore.profile?.userId || 'U_TEST_USER_ID', // ใช้ ID จริง หรือ Test
-      displayName: liffStore.profile?.displayName || 'Test User',
-      pictureUrl: liffStore.profile?.pictureUrl,
+      lineUserId: liffStore.userId,
+      displayName: liffStore.displayName,
+      pictureUrl: liffStore.pictureUrl,
       firstName: form.value.firstName,
       lastName: form.value.lastName,
       phoneNumber: form.value.phoneNumber,
@@ -115,15 +162,43 @@ const handleBooking = async () => {
       </div>
 
       <div class="bg-white p-4 rounded-xl shadow-sm border">
-        <h3 class="font-bold mb-3 flex items-center gap-2">📅 เลือกวันรับ - คืน</h3>
-        <VueDatePicker 
-          v-model="dates" 
-          range 
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold flex items-center gap-2">📅 เลือกวันรับ - คืน</h3>
+          <div v-if="isLoadingAvailability" class="text-xs text-gray-500">
+            กำลังโหลด...
+          </div>
+          <div v-else-if="availability?.totalBookings > 0" class="text-xs text-orange-600 font-medium">
+            มี {{ availability.totalBookings }} การจองอยู่
+          </div>
+        </div>
+
+        <VueDatePicker
+          v-model="dates"
+          range
           :min-date="new Date()"
           :enable-time-picker="false"
+          :disabled-dates="disabledDates"
           placeholder="กดเพื่อเลือกช่วงเวลา"
           auto-apply
         />
+
+        <!-- Info about disabled dates -->
+        <div v-if="availability && availability.bookedDates.length > 0" class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p class="text-xs text-yellow-800 font-medium mb-2">⚠️ วันที่ไม่พร้อมให้เช่า:</p>
+          <div class="space-y-1">
+            <div v-for="booking in availability.bookedDates.slice(0, 3)" :key="booking.rentalId" class="text-xs text-yellow-700">
+              • {{ dayjs(booking.startDate).format('DD/MM/YYYY') }} - {{ dayjs(booking.endDate).format('DD/MM/YYYY') }}
+              <span class="text-yellow-600">({{ booking.status }})</span>
+            </div>
+            <div v-if="availability.bookedDates.length > 3" class="text-xs text-yellow-600">
+              + อีก {{ availability.bookedDates.length - 3 }} รายการ
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="!isLoadingAvailability" class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p class="text-xs text-green-700">✓ สินค้านี้พร้อมให้เช่าทุกวัน</p>
+        </div>
       </div>
 
       <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
