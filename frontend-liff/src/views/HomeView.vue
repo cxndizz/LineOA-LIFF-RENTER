@@ -1,10 +1,12 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useProductStore } from '@/stores/product'
+import { useBranchStore } from '@/stores/branch'
 import { useLiffStore } from '@/stores/liff'
 import api from '@/utils/axios'
 
 const productStore = useProductStore()
+const branchStore = useBranchStore()
 const liffStore = useLiffStore()
 
 // ฟังก์ชันสำหรับสร้าง URL รูปภาพ (ป้องกัน double slash)
@@ -13,8 +15,63 @@ const getImageUrl = (path) => {
   return `${api.defaults.baseURL}/${cleanPath}`
 }
 
+// Filter state
+const filters = ref({
+  search: '',
+  branchId: null,
+  minPrice: null,
+  maxPrice: null,
+  status: null
+})
+
+const showFilters = ref(false)
+
+// Apply filters
+const applyFilters = () => {
+  const filterParams = {}
+
+  if (filters.value.search) filterParams.search = filters.value.search
+  if (filters.value.branchId) filterParams.branchId = filters.value.branchId
+  if (filters.value.minPrice) filterParams.minPrice = filters.value.minPrice
+  if (filters.value.maxPrice) filterParams.maxPrice = filters.value.maxPrice
+  if (filters.value.status) filterParams.status = filters.value.status
+
+  productStore.fetchProducts(filterParams)
+}
+
+// Clear all filters
+const clearFilters = () => {
+  filters.value = {
+    search: '',
+    branchId: null,
+    minPrice: null,
+    maxPrice: null,
+    status: null
+  }
+  productStore.fetchProducts()
+}
+
+// Check if any filter is active
+const hasActiveFilters = () => {
+  return filters.value.search ||
+         filters.value.branchId ||
+         filters.value.minPrice ||
+         filters.value.maxPrice ||
+         filters.value.status
+}
+
+// Watch search input for real-time search
+let searchTimeout = null
+watch(() => filters.value.search, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    applyFilters()
+  }, 500) // Debounce 500ms
+})
+
 onMounted(() => {
   productStore.fetchProducts()
+  branchStore.fetchBranches()
 })
 </script>
 
@@ -31,7 +88,12 @@ onMounted(() => {
         </h1>
 
         <!-- User Profile -->
-        <div v-if="liffStore.isLoggedIn" class="flex items-center gap-2">
+        <div
+          v-if="liffStore.isLoggedIn"
+          @click="$router.push('/history')"
+          class="flex items-center gap-2 cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+          title="ดูประวัติการเช่า"
+        >
           <div class="text-right hidden sm:block">
             <p class="text-xs text-gray-500">สวัสดี</p>
             <p class="text-sm font-semibold text-gray-800">{{ liffStore.displayName }}</p>
@@ -51,14 +113,94 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Search Bar (Future) -->
-      <div class="relative">
-        <input
-          type="text"
-          placeholder="ค้นหากล้อง, อุปกรณ์..."
-          class="w-full px-4 py-2.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
-        />
-        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+      <!-- Search Bar -->
+      <div class="flex gap-2">
+        <div class="relative flex-1">
+          <input
+            v-model="filters.search"
+            type="text"
+            placeholder="ค้นหากล้อง, อุปกรณ์..."
+            class="w-full px-4 py-2.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+
+        <!-- Filter Toggle Button -->
+        <button
+          @click="showFilters = !showFilters"
+          class="px-4 py-2.5 rounded-xl border transition-all flex items-center gap-2 text-sm font-medium"
+          :class="hasActiveFilters() ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-700 border-gray-200'"
+        >
+          <span>🔧</span>
+          <span class="hidden sm:inline">ตัวกรอง</span>
+          <span v-if="hasActiveFilters()" class="bg-white text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">!</span>
+        </button>
+      </div>
+
+      <!-- Filter Panel -->
+      <div v-if="showFilters" class="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+        <!-- Branch Filter -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1.5">📍 สาขา</label>
+          <select
+            v-model="filters.branchId"
+            @change="applyFilters"
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option :value="null">ทุกสาขา</option>
+            <option v-for="branch in branchStore.branches" :key="branch.id" :value="branch.id">
+              {{ branch.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Price Range -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1.5">💰 ราคาต่ำสุด</label>
+            <input
+              v-model.number="filters.minPrice"
+              @change="applyFilters"
+              type="number"
+              placeholder="0"
+              class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1.5">💰 ราคาสูงสุด</label>
+            <input
+              v-model.number="filters.maxPrice"
+              @change="applyFilters"
+              type="number"
+              placeholder="∞"
+              class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1.5">🏷️ สถานะ</label>
+          <select
+            v-model="filters.status"
+            @change="applyFilters"
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option :value="null">ทุกสถานะ</option>
+            <option value="AVAILABLE">พร้อมให้เช่า</option>
+            <option value="UNAVAILABLE">ไม่พร้อม</option>
+            <option value="MAINTENANCE">ซ่อมบำรุง</option>
+          </select>
+        </div>
+
+        <!-- Clear Filters Button -->
+        <button
+          v-if="hasActiveFilters()"
+          @click="clearFilters"
+          class="w-full px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-all"
+        >
+          ล้างตัวกรอง ✕
+        </button>
       </div>
     </header>
 
@@ -83,13 +225,40 @@ onMounted(() => {
         v-else-if="productStore.products.length === 0"
         class="flex flex-col items-center justify-center py-16 px-6"
       >
-        <div class="text-6xl mb-4">📦</div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">ยังไม่มีสินค้า</h3>
-        <p class="text-gray-500 text-center">ขณะนี้ยังไม่มีสินค้าในระบบ<br />กรุณากลับมาใหม่ภายหลัง</p>
+        <div class="text-6xl mb-4">{{ hasActiveFilters() ? '🔍' : '📦' }}</div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">
+          {{ hasActiveFilters() ? 'ไม่พบสินค้าที่ตรงกับเงื่อนไข' : 'ยังไม่มีสินค้า' }}
+        </h3>
+        <p class="text-gray-500 text-center mb-4">
+          {{ hasActiveFilters() ? 'ลองปรับเงื่อนไขการค้นหาหรือล้างตัวกรอง' : 'ขณะนี้ยังไม่มีสินค้าในระบบ<br />กรุณากลับมาใหม่ภายหลัง' }}
+        </p>
+        <button
+          v-if="hasActiveFilters()"
+          @click="clearFilters"
+          class="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all"
+        >
+          ล้างตัวกรอง
+        </button>
       </div>
 
-      <!-- Product Grid -->
-      <div v-else class="grid grid-cols-2 gap-4">
+      <!-- Results Counter & Active Filters -->
+      <div v-else class="space-y-3">
+        <div class="flex items-center justify-between text-sm">
+          <p class="text-gray-600">
+            พบ <span class="font-bold text-gray-900">{{ productStore.products.length }}</span> รายการ
+          </p>
+          <button
+            v-if="hasActiveFilters()"
+            @click="clearFilters"
+            class="text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
+          >
+            <span>ล้างตัวกรอง</span>
+            <span>✕</span>
+          </button>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-2 gap-4">
         <div
           v-for="product in productStore.products"
           :key="product.id"
@@ -162,6 +331,7 @@ onMounted(() => {
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </main>

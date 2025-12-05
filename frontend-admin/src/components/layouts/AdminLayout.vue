@@ -11,6 +11,8 @@ const menus = [
   { name: 'Manage Branches', path: '/branches', icon: 'VX' },
   { name: 'Manage Products', path: '/products', icon: '📦' },
   { name: 'Manage Orders', path: '/orders', icon: '📝' },
+  { name: 'Manage Customers', path: '/customers', icon: '👥' },
+  { name: 'Manage Users', path: '/users', icon: '🔐' },
 ]
 
 const handleLogout = () => {

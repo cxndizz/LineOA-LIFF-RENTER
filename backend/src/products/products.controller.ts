@@ -1,5 +1,5 @@
 // File: src/products/products.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,10 +22,24 @@ export class ProductsController {
     return this.productsService.create(createProductDto, files || []);
   }
 
-  // 🔓 ดูสินค้าทั้งหมด
+  // 🔓 ดูสินค้าทั้งหมด (รองรับ Filtering & Search)
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('branchId') branchId?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('status') status?: string,
+  ) {
+    const filters = {
+      search,
+      branchId: branchId ? parseInt(branchId) : undefined,
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      status,
+    };
+
+    return this.productsService.findAll(filters);
   }
 
   // 🔓 ดูรายละเอียดสินค้า

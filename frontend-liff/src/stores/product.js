@@ -9,12 +9,22 @@ export const useProductStore = defineStore("product", () => {
   const loading = ref(false);
   const error = ref(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (filters = {}) => {
     loading.value = true;
     error.value = null;
     try {
-      // เรียก API GET /products (เส้นนี้เราเปิด Public ไว้แล้วที่ Backend)
-      const response = await api.get("/products");
+      // Build query parameters from filters
+      const params = new URLSearchParams();
+      if (filters.search) params.append('search', filters.search);
+      if (filters.branchId) params.append('branchId', filters.branchId);
+      if (filters.minPrice !== undefined && filters.minPrice !== null) params.append('minPrice', filters.minPrice);
+      if (filters.maxPrice !== undefined && filters.maxPrice !== null) params.append('maxPrice', filters.maxPrice);
+      if (filters.status) params.append('status', filters.status);
+
+      const queryString = params.toString();
+      const url = queryString ? `/products?${queryString}` : '/products';
+
+      const response = await api.get(url);
       products.value = response.data;
     } catch (err) {
       console.error("Error fetching products:", err);

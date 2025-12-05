@@ -23,6 +23,12 @@ export class RentalsController {
     return this.rentalsService.findAll();
   }
 
+  // 🔓 Customer ดูประวัติการเช่าของตัวเอง (LIFF)
+  @Get('my-history/:lineUserId')
+  getMyHistory(@Param('lineUserId') lineUserId: string) {
+    return this.rentalsService.getCustomerHistory(lineUserId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.rentalsService.findOne(+id);

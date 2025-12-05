@@ -108,6 +108,91 @@ export class RentalsService {
     });
   }
 
+  /**
+   * Get customer rental history by LINE User ID
+   */
+  async getCustomerHistory(lineUserId: string) {
+    // Find customer by LINE User ID
+    const customer = await this.prisma.customer.findUnique({
+      where: { lineUserId },
+    });
+
+    if (!customer) {
+      return {
+        customer: null,
+        rentals: [],
+        totalRentals: 0,
+        totalSpent: 0,
+      };
+    }
+
+    // Get all rentals for this customer
+    const rentals = await this.prisma.rentalOrder.findMany({
+      where: { customerId: customer.id },
+      include: {
+        product: {
+          select: {
+            name: true,
+            images: {
+              where: { isMain: true },
+              take: 1,
+            },
+          },
+        },
+        branch: {
+          select: {
+            name: true,
+          },
+        },
+        payment: {
+          select: {
+            amount: true,
+            slipUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Calculate total spent (only completed rentals)
+    const totalSpent = await this.prisma.rentalOrder.aggregate({
+      _sum: {
+        totalPrice: true,
+      },
+      where: {
+        customerId: customer.id,
+        status: 'RETURNED',
+      },
+    });
+
+    return {
+      customer: {
+        id: customer.id,
+        lineUserId: customer.lineUserId,
+        displayName: customer.displayName,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        pictureUrl: customer.pictureUrl,
+      },
+      rentals: rentals.map((rental) => ({
+        id: rental.id,
+        rentalRef: rental.rentalRef,
+        productName: rental.product.name,
+        productImage: rental.product.images[0]?.url || null,
+        branchName: rental.branch.name,
+        startDate: rental.startDate,
+        endDate: rental.endDate,
+        totalPrice: Number(rental.totalPrice),
+        depositAmount: Number(rental.depositAmount),
+        status: rental.status,
+        createdAt: rental.createdAt,
+        hasPayment: !!rental.payment,
+      })),
+      totalRentals: rentals.length,
+      totalSpent: Number(totalSpent._sum.totalPrice || 0),
+    };
+  }
+
   async updateStatus(id: number, updateDto: UpdateRentalStatusDto, adminId: number) {
     const { status, note } = updateDto;
 

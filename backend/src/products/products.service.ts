@@ -30,8 +30,46 @@ export class ProductsService {
     });
   }
 
-  findAll() {
+  async findAll(filters?: {
+    search?: string;
+    branchId?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    status?: string;
+  }) {
+    const where: any = {};
+
+    // Search filter - matches name or description
+    if (filters?.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Branch filter
+    if (filters?.branchId) {
+      where.branchId = filters.branchId;
+    }
+
+    // Price range filter
+    if (filters?.minPrice !== undefined || filters?.maxPrice !== undefined) {
+      where.pricePerDay = {};
+      if (filters.minPrice !== undefined) {
+        where.pricePerDay.gte = filters.minPrice;
+      }
+      if (filters.maxPrice !== undefined) {
+        where.pricePerDay.lte = filters.maxPrice;
+      }
+    }
+
+    // Status filter
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
     return this.prisma.product.findMany({
+      where,
       include: { images: true, branch: true }, // ดึงรูปและสาขามาด้วย
       orderBy: { id: 'desc' },
     });
