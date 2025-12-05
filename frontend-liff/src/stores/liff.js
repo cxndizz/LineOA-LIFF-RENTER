@@ -1,136 +1,82 @@
-// File: frontend-liff/src/stores/liff.js
-import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import liff from '@line/liff'
 
-export const useLiffStore = defineStore('liff', () => {
-  // States
-  const profile = ref(null)
-  const isLoggedIn = ref(false)
-  const isLoading = ref(true)
-  const error = ref(null)
-  const isInClient = ref(false) // ใช้งานใน LINE App หรือ External Browser
+export const useLiffStore = defineStore('liff', {
+  state: () => ({
+    profile: null,
+    isLoggedIn: false,
+    isInClient: false,
+    error: null,
+    isLoading: true
+  }),
 
-  // Get LIFF ID from environment variable
-  const LIFF_ID = import.meta.env.VITE_LIFF_ID || 'YOUR_LIFF_ID_HERE'
+  actions: {
+    async init() {
+      this.isLoading = true
+      try {
+        // ดึง LIFF ID จาก Environment Variable (.env)
+        const liffId = import.meta.env.VITE_LIFF_ID
 
-  // Computed
-  const userId = computed(() => profile.value?.userId || null)
-  const displayName = computed(() => profile.value?.displayName || 'ผู้ใช้')
-  const pictureUrl = computed(() => profile.value?.pictureUrl || null)
+        if (!liffId) {
+          throw new Error('LIFF ID is missing in .env file (VITE_LIFF_ID)')
+        }
 
-  /**
-   * Initialize LIFF SDK
-   */
-  const init = async () => {
-    isLoading.value = true
-    error.value = null
+        console.log('Initializing LIFF with ID:', liffId)
 
-    try {
-      console.log('🚀 Initializing LIFF...')
+        // เริ่มต้นการทำงานของ LIFF
+        await liff.init({ liffId })
 
-      // Init LIFF
-      await liff.init({ liffId: LIFF_ID })
+        // ตรวจสอบว่าเปิดในแอป LINE หรือไม่
+        this.isInClient = liff.isInClient()
 
-      // Check if running in LINE client
-      isInClient.value = liff.isInClient()
-      console.log('📱 Is in LINE Client:', isInClient.value)
+        // ตรวจสอบสถานะ Login
+        if (liff.isLoggedIn()) {
+          await this.getProfile()
+          this.isLoggedIn = true
+        } else {
+          // ถ้ายังไม่ Login และเปิดใน External Browser ให้ Redirect ไปหน้า Login
+          // แต่ถ้าเปิดใน LINE App มันควรจะ Login ให้อัตโนมัติ (ขึ้นอยู่กับการตั้งค่าใน Console)
+          if (!this.isInClient) {
+            liff.login() 
+          }
+        }
+      } catch (err) {
+        console.error('LIFF Init failed:', err)
+        this.error = err.message || 'Failed to initialize LIFF'
+      } finally {
+        this.isLoading = false
+      }
+    },
 
-      // Check if logged in
-      if (liff.isLoggedIn()) {
-        console.log('✅ Already logged in')
-        isLoggedIn.value = true
+    async getProfile() {
+      try {
+        const profile = await liff.getProfile()
+        this.profile = {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+          statusMessage: profile.statusMessage
+        }
+        console.log('User Profile Loaded:', this.profile)
+      } catch (err) {
+        console.error('Get Profile failed:', err)
+        this.error = 'Failed to load user profile'
+      }
+    },
 
-        // Get user profile
-        const userProfile = await liff.getProfile()
-        profile.value = userProfile
-        console.log('👤 User Profile:', userProfile)
-      } else {
-        console.log('❌ Not logged in, redirecting to LINE Login...')
-        // Auto login
+    login() {
+      if (!liff.isLoggedIn()) {
         liff.login()
       }
-    } catch (err) {
-      console.error('❌ LIFF Init failed:', err)
-      error.value = err.message || 'Failed to initialize LIFF'
-    } finally {
-      isLoading.value = false
-    }
-  }
+    },
 
-  /**
-   * Login (manual trigger)
-   */
-  const login = () => {
-    if (!liff.isLoggedIn()) {
-      liff.login()
-    }
-  }
-
-  /**
-   * Logout
-   */
-  const logout = () => {
-    if (liff.isLoggedIn()) {
-      liff.logout()
-      isLoggedIn.value = false
-      profile.value = null
-    }
-  }
-
-  /**
-   * Close LIFF window
-   */
-  const closeLiff = () => {
-    if (liff.isInClient()) {
-      liff.closeWindow()
-    }
-  }
-
-  /**
-   * Send message to chat (requires specific permissions)
-   */
-  const sendMessages = async (messages) => {
-    try {
-      if (liff.isApiAvailable('shareTargetPicker')) {
-        await liff.shareTargetPicker(messages)
-        return true
-      } else {
-        console.warn('shareTargetPicker is not available')
-        return false
+    logout() {
+      if (liff.isLoggedIn()) {
+        liff.logout()
+        this.isLoggedIn = false
+        this.profile = null
+        window.location.reload()
       }
-    } catch (err) {
-      console.error('Failed to send messages:', err)
-      return false
     }
-  }
-
-  /**
-   * Get access token
-   */
-  const getAccessToken = () => {
-    return liff.getAccessToken()
-  }
-
-  return {
-    // States
-    profile,
-    isLoggedIn,
-    isLoading,
-    error,
-    isInClient,
-
-    // Computed
-    userId,
-    displayName,
-    pictureUrl,
-
-    // Actions
-    init,
-    login,
-    logout,
-    closeLiff,
-    sendMessages,
-    getAccessToken
   }
 })
