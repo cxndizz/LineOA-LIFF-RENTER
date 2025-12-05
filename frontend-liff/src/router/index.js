@@ -4,6 +4,7 @@ import HomeView from "../views/HomeView.vue";
 import ProductDetailView from "../views/ProductDetailView.vue";
 import BookingView from "../views/BookingView.vue";
 import PaymentView from "../views/PaymentView.vue";
+import HistoryView from "../views/HistoryView.vue";
 import PrivacyView from "../views/PrivacyView.vue";
 import TermsView from "../views/TermsView.vue";
 
@@ -29,6 +30,11 @@ const router = createRouter({
       path: "/payment/:id", // :id คือ Order ID
       name: "payment",
       component: PaymentView,
+    },
+    {
+      path: "/history",
+      name: "history",
+      component: HistoryView,
     },
     { path: "/privacy", component: PrivacyView },
     { path: "/terms", component: TermsView },

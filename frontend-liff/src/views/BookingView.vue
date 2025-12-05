@@ -39,6 +39,12 @@ const form = ref({
   address: ''
 })
 
+// Consent checkboxes
+const consent = ref({
+  terms: false,
+  privacy: false
+})
+
 // Fetch availability data
 const fetchAvailability = async () => {
   if (!route.params.id) return
@@ -103,7 +109,13 @@ const summary = computed(() => {
 
 const handleBooking = async () => {
   if (!summary.value) return alert('กรุณาเลือกวันเช่า')
-  
+
+  // Validate consent
+  if (!consent.value.terms || !consent.value.privacy) {
+    alert('กรุณายอมรับเงื่อนไขการใช้บริการและนโยบายความเป็นส่วนตัว')
+    return
+  }
+
   isSubmitting.value = true
   try {
     // Validate LIFF login
@@ -240,15 +252,65 @@ const handleBooking = async () => {
           <span>฿{{ summary.total }}</span>
         </div>
       </div>
+
+      <!-- Consent Checkboxes -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+        <h3 class="font-bold mb-3 flex items-center gap-2">
+          <span class="text-xl">✓</span> ยอมรับเงื่อนไข
+        </h3>
+
+        <label class="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            v-model="consent.terms"
+            class="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          />
+          <span class="text-sm text-gray-700 flex-1 group-hover:text-gray-900">
+            ข้าพเจ้ายอมรับ
+            <router-link to="/terms" class="text-blue-600 underline font-medium hover:text-blue-700">
+              ข้อกำหนดและเงื่อนไขการใช้บริการ
+            </router-link>
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            v-model="consent.privacy"
+            class="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          />
+          <span class="text-sm text-gray-700 flex-1 group-hover:text-gray-900">
+            ข้าพเจ้ายอมรับ
+            <router-link to="/privacy" class="text-blue-600 underline font-medium hover:text-blue-700">
+              นโยบายความเป็นส่วนตัว
+            </router-link>
+            และยินยอมให้เก็บรวบรวมข้อมูลส่วนบุคคลเพื่อการให้บริการ
+          </span>
+        </label>
+
+        <div v-if="!consent.terms || !consent.privacy" class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p class="text-xs text-yellow-700 flex items-center gap-2">
+            <span>⚠️</span>
+            <span>กรุณายอมรับเงื่อนไขทั้งหมดก่อนยืนยันการจอง</span>
+          </p>
+        </div>
+      </div>
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t safe-area-bottom md:max-w-md md:mx-auto">
-      <button 
+      <button
         @click="handleBooking"
-        :disabled="isSubmitting || !summary"
-        class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl disabled:bg-gray-300 disabled:text-gray-500 transition"
+        :disabled="isSubmitting || !summary || !consent.terms || !consent.privacy"
+        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3.5 rounded-xl disabled:from-gray-300 disabled:to-gray-300 disabled:text-gray-500 transition-all shadow-lg disabled:shadow-none active:scale-95"
       >
-        {{ isSubmitting ? 'กำลังบันทึก...' : 'ยืนยันการจอง' }}
+        <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
+          <span class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          กำลังบันทึก...
+        </span>
+        <span v-else-if="!consent.terms || !consent.privacy">กรุณายอมรับเงื่อนไขก่อน</span>
+        <span v-else class="flex items-center justify-center gap-2">
+          ยืนยันการจอง <span>🚀</span>
+        </span>
       </button>
     </div>
   </div>
