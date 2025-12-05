@@ -12,6 +12,7 @@ import { RentalsModule } from './rentals/rentals.module';
 import { PaymentsModule } from './payments/payments.module';
 import { LineApiModule } from './line-api/line-api.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     PaymentsModule,
     LineApiModule,
     AnalyticsModule,
+    CustomersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
