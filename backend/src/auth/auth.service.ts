@@ -61,9 +61,7 @@ export class AuthService {
    */
   async getAllUsers() {
     return this.prisma.user.findMany({
-      include: {
-        branch: true,
-      },
+      // FIX: Removed 'include' because we are using 'select'
       orderBy: {
         createdAt: 'desc',
       },
@@ -74,7 +72,7 @@ export class AuthService {
         role: true,
         isActive: true,
         branchId: true,
-        branch: true,
+        branch: true, // Select branch relation here
         createdAt: true,
         updatedAt: true,
         // Exclude password
@@ -88,9 +86,7 @@ export class AuthService {
   async getUserById(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: {
-        branch: true,
-      },
+      // FIX: Removed 'include' because we are using 'select'
       select: {
         id: true,
         email: true,
@@ -98,7 +94,7 @@ export class AuthService {
         role: true,
         isActive: true,
         branchId: true,
-        branch: true,
+        branch: true, // Select branch relation here
         createdAt: true,
         updatedAt: true,
       },
@@ -144,9 +140,7 @@ export class AuthService {
         branchId: data.branchId,
         isActive: data.isActive ?? true,
       },
-      include: {
-        branch: true,
-      },
+      // FIX: Removed 'include' because we are using 'select'
       select: {
         id: true,
         email: true,
@@ -154,7 +148,7 @@ export class AuthService {
         role: true,
         isActive: true,
         branchId: true,
-        branch: true,
+        branch: true, // Select branch relation here
         createdAt: true,
         updatedAt: true,
       },
@@ -201,9 +195,7 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { id },
       data: updateData,
-      include: {
-        branch: true,
-      },
+      // FIX: Removed 'include' because we are using 'select'
       select: {
         id: true,
         email: true,
@@ -211,7 +203,7 @@ export class AuthService {
         role: true,
         isActive: true,
         branchId: true,
-        branch: true,
+        branch: true, // Select branch relation here
         createdAt: true,
         updatedAt: true,
       },

@@ -143,7 +143,9 @@ export class AnalyticsService {
   }
 
   private async getRevenueTrend(days: number) {
-    const trend = [];
+    // FIX: Define type explicitly to avoid 'never[]' error
+    const trend: { date: string; revenue: number }[] = [];
+    
     for (let i = days - 1; i >= 0; i--) {
       const date = dayjs().subtract(i, 'day');
       const startOfDay = date.startOf('day').toDate();
